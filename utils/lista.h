@@ -1,6 +1,30 @@
-#ifndef LIST_H
-#define LIST_H
-
+#ifndef LISTA_H
+#define LISTA_H
+/*--------------------------------------------------------
+ *			LIST:H
+ *--------------------------------------------------------
+ *
+ * Autor : Federico A Lizondo 
+ *
+ * version: 22/04/2016
+ *
+ * Description:  It's a generic simple list 
+ * *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ *
+ */
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -24,7 +48,7 @@ typedef struct lista
  *@params l = lista a verificar
  *@return 0 = FALSE or 1 = TRUE;	 
  */
-int isEmpty(lista * l)
+int isEmpty(const lista * l)
 {
 	return !( l != NULL && l->length ) ;
 }
@@ -167,7 +191,7 @@ void pop_back(lista * l ,void ** dato)
  *@param l = lista 
  */
 
-punt next( lista * l )
+punt next(const lista * l )
 {
 	if( l != NULL && l->recorrido != NULL )
 	{
@@ -185,7 +209,7 @@ punt next( lista * l )
  *Inicializa variable de recorrido desde el inicio
  *@param l = lista
  */
-void startNext( lista * l)
+void startNext(const lista * l)
 {
 	if( l != NULL )
 	{
@@ -199,7 +223,7 @@ void startNext( lista * l)
  * Devuelve si hay un puntero anterior
  * @param l = lista
  */
-punt prev(lista * l)
+punt prev(const lista * l)
 {
 	if( l != NULL && l->recorrido != NULL )
 	{
@@ -216,7 +240,7 @@ punt prev(lista * l)
  * Inicializa la variable de recorrido desde el final
  * @param l = lista
  */
-void startPrev(lista *l)
+void startPrev(const lista *l)
 {
 	if(l != NULL && l->fin!=NULL )
 	{
@@ -230,7 +254,7 @@ void startPrev(lista *l)
  * @param l = lista
  * @param pos = desde donde empezar a recorrer
  */
-void setRecorrido(lista * l , punt pos)
+void setRecorrido( const lista * l , punt pos)
 {
 	if(l!=NULL)
 	{
@@ -243,7 +267,7 @@ void setRecorrido(lista * l , punt pos)
  * Retorna la variable de recorrido
  * @param l = lista
  */
-punt getRecorrido(lista * l)
+punt getRecorrido(const lista * l)
 {
 	if(l!=NULL)
 	{
@@ -259,7 +283,7 @@ punt getRecorrido(lista * l)
  * Retorna el puntero al primer Elemento
  * @param l = lista
  */
-const punt begin(lista * l)
+const punt begin(const lista * l)
 {
 	if( l != NULL)
 	{
@@ -275,7 +299,7 @@ const punt begin(lista * l)
  * Retorna el puntero al ultimo Elemento
  * @param l = lista
  */
-const punt end(lista * l)
+const punt end(const lista * l)
 {
 	if( l != NULL)
 	{
@@ -290,7 +314,7 @@ const punt end(lista * l)
  * Retorna la cantidad de elementos de la lista
  * @param l = lista
  */
-int size(lista * l)
+int size(const lista * l )
 {
 	if( l != NULL )
 	{
@@ -404,7 +428,7 @@ void erase(lista * l, int pos)
  * Se podra obtener un dato apartir de una posicion de memoria
  * @param pos = direccion del nodo
  */
-void *getData(punt * pos)
+void *getData(const punt * pos)
 {
 	if(pos!=NULL)
 		return (*pos)->data;			
@@ -418,7 +442,7 @@ void *getData(punt * pos)
  * @param pos
  * @param dato
  */ 
-void setData(punt * pos , void * dato )
+void setData(const punt * pos , void * dato )
 {
 	if(pos != NULL)
 		(*pos)->data = dato;
@@ -448,7 +472,7 @@ void swap( punt * origen , punt * destino )
  * @param l = lista
  * @param pos = numero de posicion que se quiere tener el puntero
  */
-punt getPuntPos(lista * l , int pos)
+punt getPuntPos(const lista * l ,const int pos)
 {
 	if( l != NULL && l->inicio != NULL )
 	{
@@ -473,12 +497,13 @@ punt getPuntPos(lista * l , int pos)
 		printf("ERROR : list is NULL.\n");
 	return NULL;
 }
+
 /*
  * Permite separar una lista en otra , con perdida de informacion
  * @param l = lista
  * @para poscion = posicion a cual partir la lista en 2;
  */
-lista *split(lista * l,int posicion)
+lista *split(const lista * l,const int posicion)
 {
 	lista * list = malloc(sizeof(lista));
 	if( list != NULL)
@@ -538,6 +563,7 @@ lista *split(lista * l,int posicion)
 	
 	return list;
 }
+
 /*
  * Permitira a partir de 2 listas formar una sola
  * @param destino = lista a donde se agregaran todos los nodos;
@@ -576,7 +602,7 @@ void merge(lista * destino, lista * origen)
  * Permitira duplicar fisicamente una lista en memoria
  * @param list = lista origen la cula duplicar)
  */
-lista * copy(lista * origen)
+lista * copy(const lista * origen)
 {
 	lista * l = malloc(sizeof(lista));
 	if( l != NULL )
@@ -704,4 +730,4 @@ void reverse( lista * l )
 		printf("ERROR : List is %s .\n",(l==NULL)?"NULL":"Empty");
 }	
 
-#endif /* LIST_H */
+#endif /* LISTA_H */
