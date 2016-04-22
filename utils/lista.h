@@ -1,5 +1,3 @@
-#ifndef LISTA_H
-#define LISTA_H
 /*--------------------------------------------------------
  *			LIST:H
  *--------------------------------------------------------
@@ -25,6 +23,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
  */
+#ifndef LISTA_H
+#define LISTA_H
 #include <stdio.h>
 #include <stdlib.h>
 
