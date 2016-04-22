@@ -40,7 +40,7 @@ typedef struct lista
 	punt inicio;
 	punt fin;
 	punt recorrido;
-	int length;
+ 	int length;
 }lista;
 
 /*
