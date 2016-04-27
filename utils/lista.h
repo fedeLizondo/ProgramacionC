@@ -191,7 +191,7 @@ void pop_back(lista * l ,void ** dato)
  *@param l = lista 
  */
 
-punt next(const lista * l )
+punt next( lista * l )
 {
 	if( l != NULL && l->recorrido != NULL )
 	{
@@ -209,12 +209,12 @@ punt next(const lista * l )
  *Inicializa variable de recorrido desde el inicio
  *@param l = lista
  */
-void startNext(const lista * l)
+void startNext( lista * l)
 {
 	if( l != NULL )
 	{
 		l->recorrido = l->inicio; 	
-	}
+}
 	else
 	printf("ERROR : List is NULL.\n");
 }
@@ -223,7 +223,7 @@ void startNext(const lista * l)
  * Devuelve si hay un puntero anterior
  * @param l = lista
  */
-punt prev(const lista * l)
+punt prev( lista * l)
 {
 	if( l != NULL && l->recorrido != NULL )
 	{
@@ -240,7 +240,7 @@ punt prev(const lista * l)
  * Inicializa la variable de recorrido desde el final
  * @param l = lista
  */
-void startPrev(const lista *l)
+void startPrev( lista *l)
 {
 	if(l != NULL && l->fin!=NULL )
 	{
@@ -254,7 +254,7 @@ void startPrev(const lista *l)
  * @param l = lista
  * @param pos = desde donde empezar a recorrer
  */
-void setRecorrido( const lista * l , punt pos)
+void setRecorrido( lista * l ,const punt pos)
 {
 	if(l!=NULL)
 	{
@@ -353,6 +353,7 @@ void clear(lista * l)
  */
 void eliminarLogico( lista * l , punt  eliminar)
 {
+	//TODO VERIFICAR SI EL PUNTERO PERTENECE A LA LISTA
 	if( l != NULL && l->inicio != NULL  && eliminar != NULL )
 	{	
 		punt r = eliminar;
@@ -398,7 +399,7 @@ void removeElement( lista * l, punt * pos){
  * @param l = lista
  * @param pos = numero de nodo a eliminar
  */
-void erase(lista * l, int pos)
+void erase(lista * l,const int pos)
 {
 	if(l!=NULL && l->inicio != NULL )
 	{
@@ -428,9 +429,9 @@ void erase(lista * l, int pos)
  * Se podra obtener un dato apartir de una posicion de memoria
  * @param pos = direccion del nodo
  */
-void *getData(const punt * pos)
+void *getData( punt * pos)
 {
-	if(pos!=NULL)
+	if( pos != NULL )
 		return (*pos)->data;			
 	else
 		printf("ERROR : position to get data is NULL.\n");
@@ -442,7 +443,7 @@ void *getData(const punt * pos)
  * @param pos
  * @param dato
  */ 
-void setData(const punt * pos , void * dato )
+void setData( punt * pos , void * dato )
 {
 	if(pos != NULL)
 		(*pos)->data = dato;
@@ -459,6 +460,7 @@ void swap( punt * origen , punt * destino )
 {
 	if(origen != NULL && destino != NULL)
 	{
+	    printf("ESTOY INTERCAMBIANDO %d por %d ",*(int*) (*origen)->data,*(int*) (*destino)->data);
 		void * aux = (*origen)->data;
 		(*origen)->data = (*destino)->data;
 		(*destino)->data = aux;
@@ -503,7 +505,7 @@ punt getPuntPos(const lista * l ,const int pos)
  * @param l = lista
  * @para poscion = posicion a cual partir la lista en 2;
  */
-lista *split(const lista * l,const int posicion)
+lista *split( lista * l,const int posicion)
 {
 	lista * list = malloc(sizeof(lista));
 	if( list != NULL)
@@ -637,7 +639,7 @@ lista * copy(const lista * origen)
  * @param dato = elemento a agregar
  * @param pos = lugar donde agregar
  */ 
-void insert(lista * l , void * dato , int pos )
+void insert(lista * l , void * dato ,const int pos )
 {
 	if( l != NULL)
 	{
@@ -729,5 +731,50 @@ void reverse( lista * l )
 	else
 		printf("ERROR : List is %s .\n",(l==NULL)?"NULL":"Empty");
 }	
+
+/*
+ *Permitira ordenar una lista a partir de una funcion dada
+ *@param lista = lista a ordenar
+ *@param compare = funcion a ordenar , debe devolver un int siendo ">1" = mayor
+ *                 "<-1" = a menor y 0 que son iguales
+ */
+void sort( lista * l, int (*cmp)(void * ,void *) )
+{
+    
+    if( l != NULL && l->inicio != NULL)
+    {
+        
+        punt r = l->inicio;
+        while( r != NULL )
+        {
+                if( r->sig != NULL )
+                {
+                    int resultado = cmp( r->data , r->sig->data );
+                    
+                    if( resultado >= 1 )
+                    {
+                        while( r != NULL && cmp(r->data,r->sig->data)>=1  )
+			{
+                                                 
+                             swap(&r ,&r->sig );       
+                             r = r->ant;    
+			}
+			
+			if( r == NULL)
+				r = l->inicio;
+		     		   	
+                    }
+                    else 
+                    r = r->sig;        
+                    
+                }
+                else 
+                r = r->sig;
+        }
+        
+    }
+    else
+        printf("ERROR : List is %s.\n",l?"NULL":"Empty");
+}
 
 #endif /* LISTA_H */
