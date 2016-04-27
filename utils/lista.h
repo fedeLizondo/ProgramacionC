@@ -652,7 +652,8 @@ void insert(lista * l , void * dato ,const int pos )
 			n->data = dato;
 		
 			punt r = NULL;
-			int aux = pos % l->length;
+			//TODO MODIFICAR PARA ACEPTAR 1 MAYOR
+			int aux = pos %(l->length);
 			if( pos >= 0 )
 			{
 				r = l->inicio;
@@ -740,10 +741,9 @@ void reverse( lista * l )
  */
 void sort( lista * l, int (*cmp)(void * ,void *) )
 {
-    
+   //Es un simple ordenamiento por burbujeo 
     if( l != NULL && l->inicio != NULL)
-    {
-        
+    {   
         punt r = l->inicio;
         while( r != NULL )
         {
@@ -754,27 +754,117 @@ void sort( lista * l, int (*cmp)(void * ,void *) )
                     if( resultado >= 1 )
                     {
                         while( r != NULL && cmp(r->data,r->sig->data)>=1  )
-			{
-                                                 
+			{                            
                              swap(&r ,&r->sig );       
                              r = r->ant;    
 			}
-			
 			if( r == NULL)
-				r = l->inicio;
-		     		   	
+				r = l->inicio;		   	
                     }
                     else 
-                    r = r->sig;        
-                    
+                    r = r->sig;                   
                 }
                 else 
                 r = r->sig;
-        }
-        
+        }   
     }
     else
         printf("ERROR : List is %s.\n",l?"NULL":"Empty");
+}
+
+/*
+ * Devuelve una lista con los elementos que se buscan
+ * @param list
+ * @param cmp = es una puntero funcion para comparar
+ * siend 1 mayor 0 igual -1 menor;
+ */
+lista * search( const lista * l , int(*cmp)(void*))
+{
+	if (l == NULL || l->inicio == NULL)
+	{
+		printf("ERROR : List is %d.\n",(l==NULL)?"NULL":"Empty");
+		return NULL;
+	}
+
+	//Si la lista existe continuo
+	lista * resultado = createList();
+	
+	if(resultado != NULL)
+	{
+		punt r = l->inicio;
+		while( r != NULL)
+		{
+			if( cmp(r->data) == 0 )				
+				push_back(resultado,r->data);	
+							
+			r = r->sig;
+		}
+	}
+	return resultado;
+}
+
+/*
+ * esta funcion permitira agregar datos de manera ordenada
+ * @param lista = lista a la cual agregar un dato
+ * @param dato = el dato a ser agregado
+ * @param cmp = un puntero de funcion que determina si es mayor o menor
+ */
+void orderInsert( lista * l, void * dato , int (*cmp)(void *,void *))
+{
+	if( l != NULL)
+	{
+		punt r = l->inicio;
+		int pos = 0;
+		while( r != NULL && cmp(dato,r->data) != 1 )
+		{	
+			pos++;
+			r = r->sig;
+		}
+		if(r == NULL)//ES EL ULTIMO DE TODOS
+		 push_back(l,dato);
+	       	else
+		{
+		 	punt n = malloc(sizeof(nodo));
+			
+			if( n != NULL)
+			{
+				 n->sig = r;
+				 n->ant = r->ant;
+				 r->ant = n;
+				 if(n->ant != NULL)
+				 	n->ant->sig = n;	    
+			}
+			else
+				printf("ERROR: Out of memory.\n"); 
+		}			
+	}
+	else
+		printf("ERROR: List is NULL.\n");
+}
+
+void * MAX_data(const lista * l , int(*cmp)(void *, void*))
+{
+	if( l != NULL && l->inicio != NULL)
+	{
+		punt r =  l->inicio;
+		void * aux = r->dato;
+		while(r != NULL && r->sig != NULL)
+		{
+			//SI es mayor lo cambio
+			if(cmp(r->sig->data,r->data)==1)
+			{
+				aux = r->sig->data;	
+			}	
+			r = r->sig;
+		}
+		
+		return aux;	
+	}	
+	else
+	{
+		printf("ERROR : List is %d.\n",l==NULL?"NULL":"Empty");
+		return NULL;
+	}
 }
 
 #endif /* LISTA_H */
