@@ -643,45 +643,42 @@ void insert(lista * l , void * dato ,const int pos )
 {
 	if( l != NULL)
 	{
-		nodo * n = malloc(sizeof(nodo));
-		
-		if( n != NULL )
-		{
-			n->sig = NULL;
-			n->ant = NULL;
-			n->data = dato;
-		
-			punt r = NULL;
-			//TODO MODIFICAR PARA ACEPTAR 1 MAYOR
-			int aux = pos %(l->length);
-			if( pos >= 0 )
+		if(pos < l->length)
 			{
-				r = l->inicio;
-				while(aux--)
-					r = r->sig;	
+				if(pos > 0)
+				{
+					punt r = r->inicio;
+					int contador = pos;
+					
+					while(contador--)
+						r = r->sig;
+					
+					nodo * n = malloc(sizeof(nodo));
+					if( n != NULL)
+					{
+						n->sig = NULL;
+						n->ant = NULL;
+						n->data = dato;
+						
+						if(r->ant != NULL)
+						{
+							r->ant->sig = n;
+						} 
+						n->ant = r->ant;
+						r->ant = n;
+						n->sig = r;
+				
+					}
+					else
+						printf("ERROR: Out of memory");		
+
+				}
+				else
+				push_front(l,dato);
 			}
 			else
-			{
-				r = l->fin;
-				while(++aux)
-					r= r->ant;		
-			}
-		
-			n->ant = r->ant;
-			n->sig = r->sig;
-			
-			if( r->ant != NULL)
-				(r->ant)->sig = n ;
-		       	else		
-				l->inicio = n;
-	
-			if( r->sig != NULL )
-				(r->sig)->ant = n;
-			else
-				l->fin = n;
-		}
-		else
-			printf("ERROR: Out of memory.\n");
+				push_back(l,dato);		
+
 	}		
 	else
 		printf("ERROR: List is NULL.\n");
@@ -866,5 +863,81 @@ void * MAX_data(const lista * l , int(*cmp)(void *, void*))
 		return NULL;
 	}
 }
+
+/*
+ * Esta funcion retorna el valor mas pequeño de la lista
+ * @param l = lista
+ * @param cmp = puntero a funcion , el cual deve devolver 1 si es mayor
+ * 0 si es igual -1 si es menor
+ */
+void * MIN_data (const lista * l,int(*cmp)(void * ,void *))
+{
+	if( l != NULL && l->inicio != NULL)
+	{
+		void * data = l->inicio->data;
+		punt r = l->inicio;
+
+		while(r != NULL && r->sig != NULL )
+		{
+			if(cmp(r->sig->data,data)== -1 )
+				data = r->sig->data;	
+			r = r->sig;	
+		}
+
+		return data;
+	}
+	else
+	{	
+		printf("ERROR: list is %s.\n",l==NULL?"NULL":"Empty");
+		return NULL;
+	}
+}	
+
+/*
+ * Esta funcion devuelve una lista sin duplicados
+ * @param l = lista
+ * @param cmp = puntero a funcion , devuelve 1 si es mayor, -1 si es menor
+ * 0 si es igual
+ */
+lista * unique(const lista * l , int (*cmp)(void *,void *) )
+{
+	if( l != NULL && l->inicio != NULL)
+	{
+		lista * lAux = malloc(sizeof(lista));
+		if( lAux != NULL )
+		{
+			punt r = l->inicio;
+			punt aux = l->inicio;		
+			int agregar = 0 ;
+			while( r != NULL)
+			{
+				aux = aux->sig;
+
+				while(aux != NULL && cmp(r->data,aux->data)!=0 )
+					aux = aux->sig;
+				if(aux == NULL)
+					push_back(lAux,r->data);
+
+				r = r->sig;
+				aux = r;
+			}
+
+			return lAux;
+		}
+		else
+		{
+			printf("ERROR: Out of memory.\n");
+			return NULL;
+		}
+
+
+	}	
+	else
+	{
+		printf("ERROR: list is %s.\n",l==NULL?"NULL":"Empty");
+		return NULL;
+	}
+
+}	
 
 #endif /* LISTA_H */
