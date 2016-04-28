@@ -460,7 +460,6 @@ void swap( punt * origen , punt * destino )
 {
 	if(origen != NULL && destino != NULL)
 	{
-	    printf("ESTOY INTERCAMBIANDO %d por %d ",*(int*) (*origen)->data,*(int*) (*destino)->data);
 		void * aux = (*origen)->data;
 		(*origen)->data = (*destino)->data;
 		(*destino)->data = aux;
@@ -783,7 +782,7 @@ lista * search( const lista * l , int(*cmp)(void*))
 		return NULL;
 	}
 
-	//Si la lista existe continuo
+	//Si la lista existe, continuo
 	lista * resultado = createList();
 	
 	if(resultado != NULL)
@@ -812,7 +811,7 @@ void orderInsert( lista * l, void * dato , int (*cmp)(void *,void *))
 	{
 		punt r = l->inicio;
 		int pos = 0;
-		while( r != NULL && cmp(dato,r->data) != 1 )
+		while( r != NULL && cmp(dato,r->data) >= 1 )
 		{	
 			pos++;
 			r = r->sig;
@@ -848,7 +847,7 @@ void * MAX_data(const lista * l , int(*cmp)(void *, void*))
 		while(r != NULL && r->sig != NULL)
 		{
 			//SI es mayor lo cambio
-			if(cmp(r->sig->data,r->data)==1)
+			if(cmp(r->sig->data,r->data) >=1)
 			{
 				aux = r->sig->data;	
 			}	
@@ -879,7 +878,7 @@ void * MIN_data (const lista * l,int(*cmp)(void * ,void *))
 
 		while(r != NULL && r->sig != NULL )
 		{
-			if(cmp(r->sig->data,data)== -1 )
+			if(cmp(r->sig->data,data) <= -1 )
 				data = r->sig->data;	
 			r = r->sig;	
 		}
