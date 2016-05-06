@@ -7,8 +7,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <pthread.h>
 
-#include  "fechaHora.h"
+#include "fecha.h" 
 
 #define IP "192.168.1.103"
 #define PUERTO 6666
@@ -24,14 +25,26 @@ int main( )
 	    length_sock = sizeof(struct sockaddr_in);
 	
 	idsock_servidor = socket(AF_INET,SOCK_STREAM,0);
+	
 	printf("ID Socket Servidor %d\n",idsock_servidor);
 
 	servidor_sock.sin_family      = AF_INET;
 	servidor_sock.sin_port        = htons(PUERTO);
 	servidor_sock.sin_addr.s_addr = inet_addr(IP);
 	
-	memset(servidor_sock.sin_zero,0,8);//
+	memset(servidor_sock.sin_zero,0,8);
 	
+	////////////////////Start-Time-Server/////////////////
+	
+	tiempo_t tiempoServidor, 
+		 tiempoCliente;
+
+	dameTime(&tiempoServidor); 
+	printf("Server ",tiempoServidor.t);
+    	imprimeHora(tiempoServidor.tMaquina);
+	
+	/////////////////////Start-Server/////////////////////
+
 	//printf("EL PID del Servidor es :  %d \n",getpid());
 	
 	printf("Bind %d\n",bind(idsock_servidor,              		\
@@ -51,11 +64,43 @@ int main( )
 		if( idsock_cliente != -1 )
 		{
 			printf("Conexion aceptada desde el cliente \n");
-		}			
+			//pthread_t hilo1;
+			//pthread_create(&hilo1,NULL,(void *) foo,NULL);
+		}
+
 	}
 
-	char b[128] ;	
-	DameFecha(b);
-	printf("HOLA MUNDO %s.\n",b);
+//	char b[128] ;	
+//	DameFecha(b);
+//	printf("HOLA MUNDO %s.\n",b);
 	return EXIT_SUCCESS;
 }
+
+void funcionHilo(void * dato)
+{
+	//struct struct_idsockc * mia //Carga del struct pasado por parametro 
+	char buff[30];
+	time_t tiempoClienteSeg;
+	int nb = 0;
+	int idSockCliente = 0 ;
+	
+	do
+	{
+		//Leo desde el cliente
+		nb = read(idSockCliente,buff,30);
+		buff[nb] = "\0" ;		
+		printf("------> Date Cliente %d : % s\n",idSockCliente,buff);
+		time_t tiempoClienteSeg = strtod( buff, NULL);
+		//Calculo diferencia con el tiempo actual 
+		dameTime(&tiempoServidor);//Actualizo tiempo servidor		
+		write(idSockCliente,difftime( tiempoServidor.t,
+					      tiempoClienteSeg,
+					      sizeof(double) );
+		wait(1000);
+	}
+	while(strcmp(buff,"exit"));
+	close(idSockCliente);
+	pthread_exit(NULL);
+}
+
+
