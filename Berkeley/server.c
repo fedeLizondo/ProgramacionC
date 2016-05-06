@@ -79,7 +79,9 @@ int main( )
 void funcionHilo(void * dato)
 {
 	//struct struct_idsockc * mia //Carga del struct pasado por parametro 
+	tiempo_t tiempoServidor;
 	char buff[30];
+	char buffer[100];
 	time_t tiempoClienteSeg;
 	int nb = 0;
 	int idSockCliente = 0 ;
@@ -88,15 +90,17 @@ void funcionHilo(void * dato)
 	{
 		//Leo desde el cliente
 		nb = read(idSockCliente,buff,30);
-		buff[nb] = "\0" ;		
+		buff[nb] ='\0' ;		
 		printf("------> Date Cliente %d : % s\n",idSockCliente,buff);
 		time_t tiempoClienteSeg = strtod( buff, NULL);
 		//Calculo diferencia con el tiempo actual 
 		dameTime(&tiempoServidor);//Actualizo tiempo servidor		
-		write(idSockCliente,difftime( tiempoServidor.t,
-					      tiempoClienteSeg,
-					      sizeof(double) );
-		wait(1000);
+		
+		snprintf(buffer,100,"%f",difftime ( tiempoServidor.t ,tiempoClienteSeg
+				   	) );
+
+		write(idSockCliente,buffer,sizeof(buffer) );
+		sleep(1000);
 	}
 	while(strcmp(buff,"exit"));
 	close(idSockCliente);
