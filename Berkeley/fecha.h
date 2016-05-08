@@ -35,15 +35,15 @@ void dameTime( tiempo_t * t )
 	{
 		t = (tiempo_t *) malloc(sizeof(tiempo_t));
 		t->t = 0;
-		t->tMaquina = NULL;
+		t->tMaquina = malloc(sizeof(struct tm));
 		t->diff = 0;
 	}
 
 	if( t != NULL)
 	{
 		t->t = time(0);
-		if(t->tMaquina != NULL)
-			free(t->tMaquina);
+	//	if(t->tMaquina != NULL)
+	//		free(t->tMaquina);
 		t->tMaquina = localtime( &t->t);
 		t->diff = 0;
 	}
@@ -94,9 +94,8 @@ void actualizarSegundo( tiempo_t * t )
 {
 	if( t != NULL )
 	{
-		t->t = t->t + t->diff + 1;
-		free( t->tMaquina );
-		t->tMaquina = localtime( &t->t );		
+		t->t = t->t + t->diff;
+		t->tMaquina = localtime(&t->t);//TODO MEJORAR MANEJO MEMORIA
 		t->diff = 0;	
 	}
 	else
