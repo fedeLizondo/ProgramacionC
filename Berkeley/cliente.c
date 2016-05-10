@@ -19,7 +19,8 @@
 #define ANSI_COLOR_MAGENTA "\x1b[35m"
 #define ANSI_COLOR_CYAN    "\x1b[36m"
 #define ANSI_COLOR_RESET   "\x1b[0m"
-
+#define ANSI_BOLD_START    "\033[1m"
+#define ANSI_BOLD_END	   "\033[0m"
 
 int main(int argc,char * argv[])
 {
@@ -38,7 +39,7 @@ int main(int argc,char * argv[])
 		printf(ANSI_COLOR_RED"ERROR al abrir al socket.\n"ANSI_COLOR_RESET);
 		exit(1);
 	}
-	printf(" Socket es  %d.\n",sd);
+	printf(" Socket es "ANSI_BOLD_START"%d"ANSI_BOLD_END".\n",sd);
 	
 	if( connect(sd, (struct sockaddr *)&pin,sizeof(struct sockaddr_in)) ==-1)
 	{
@@ -49,16 +50,12 @@ int main(int argc,char * argv[])
 	char buffer[100];
 	int endBuffer = 0;
 	int EXIT = 1000;
-//	tiempo_t * tClient = malloc(sizeof(tiempo_t));
 	tiempo_t tiempoCliente;
 	dameTime(&tiempoCliente);
-//	tiempoCliente = *tClient;
-	
-	printf("Cliente "); imprimeHora(tiempoCliente.tMaquina);
-		
+	printf(ANSI_BOLD_START"Cliente "); imprimeHora(tiempoCliente.tMaquina);
+	printf(ANSI_BOLD_END);	
 	while(EXIT--)
 	{
-		//printf("%d Envio ----> %lf \n",EXIT , (double)tiempoCliente.t);
 		
 		//CONVIERTE DE STRING A DOUBLE TIEMPO CLIENTE 
 		snprintf(buffer,100,"%lf",(double)tiempoCliente.t);
@@ -74,7 +71,7 @@ int main(int argc,char * argv[])
 			buffer[endBuffer] = '\0';
 			
 			double tiempoDiferenciaServidor = strtod( buffer, NULL);
-			if( tiempoDiferenciaServidor > 1)
+			if( tiempoDiferenciaServidor != 0  )
 			{
 				
 				printf("Sincronizando servidor \nANTES "ANSI_COLOR_RED );
@@ -88,13 +85,21 @@ int main(int argc,char * argv[])
 				printf("DESPUES "ANSI_COLOR_GREEN); 
 				imprimeHora(tiempoCliente.tMaquina);
 				printf(ANSI_COLOR_RESET);
+			//	printf("\033[4A"); //Vuelve el cursor 4 lugares arriba
 			}
+		//actualizarSegundo(&tiempoCliente); //TODO BORRAR COMENTARIO PARA SINCRONIZAR
+
 		}
+		imprimeHora(tiempoCliente.tMaquina);		
+
+		// printf("\033[1A");//Vuelve el cursor 1 lugar arriba 
 		
 		sleep(1);
 	}
-	//CIERRA LA CONEXIÓN DESPUES DE UN 
+	//CIERRA LA CONEXIÓN DESPUES DE UN TIEMPO
 	char b[]="exit";	
 	write( sd , b , (sizeof(char)*5) );
-
+		
+	close(sd);
+	return EXIT_SUCCESS;	
 }

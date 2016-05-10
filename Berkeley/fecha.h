@@ -94,7 +94,7 @@ void actualizarSegundo( tiempo_t * t )
 {
 	if( t != NULL )
 	{
-		t->t = t->t + t->diff;
+		t->t = t->t + t->diff + 1;
 		t->tMaquina = localtime(&t->t);//TODO MEJORAR MANEJO MEMORIA
 		t->diff = 0;	
 	}

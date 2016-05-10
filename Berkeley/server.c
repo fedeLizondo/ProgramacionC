@@ -57,24 +57,27 @@ int main(int argc,char * argv[])
 	tiempo_t tiempoServidor;  
 	dameTime( ts  ); 
 	tiempoServidor = *ts;
-	printf("Server ");
+	printf("\033[1mServer ");
     	imprimeHora(tiempoServidor.tMaquina);
-	
+	printf("\033[0m");
 	
 	/////////////////////Start-Server/////////////////////
 
-	printf("EL PID del Servidor es :  %d \n",getpid());
+	//printf("EL PID del Servidor es :  %d \n",getpid());
 	
-	printf("Bind %d\n",bind(idsock_servidor,              		\
-			   (struct sockaddr *) &servidor_sock,		\
-			   length_sock));
+	printf(" Bind   %s]"ANSI_COLOR_RESET"\n",bind(
+					idsock_servidor,              		\
+			   		(struct sockaddr *) &servidor_sock,		\
+			   		length_sock
+				) == 0?ANSI_COLOR_GREEN"[OK":ANSI_COLOR_RED"[ERROR"
+			);
 
-	printf(" Listen %s"ANSI_COLOR_RESET"\n",listen(idsock_servidor,5)==0?ANSI_COLOR_GREEN
-		       "OK":ANSI_COLOR_RED"ERROR");
+	printf(" Listen %s]"ANSI_COLOR_RESET"\n",listen(idsock_servidor,5)==0?ANSI_COLOR_GREEN
+		       "[OK":ANSI_COLOR_RED"[ERROR");
 
 	while( 1 )//Infinity LOOP
 	{
-		printf("Esperando conexion %d .\n",cantidadHilos);
+		printf("Esperando conexion nro : %d.\n", cantidadHilos + 1 );
 
 		mistruct.idSockCliente = accept(idsock_servidor ,		  \
 				        (struct sockaddr *)&cliente_sock, \
@@ -82,8 +85,8 @@ int main(int argc,char * argv[])
 
 		if( mistruct.idSockCliente != -1 )
 		{
-			printf("Conexion aceptada desde el cliente \n");
-			//pthread_t hilo1;
+			printf("Conexion aceptada desde el cliente %d\n",mistruct.idSockCliente );
+			
 			pthread_create(&hilos[++cantidadHilos],NULL,(void*) funcionHilo, (void*) &mistruct );
 		}
 		else
@@ -105,6 +108,8 @@ void funcionHilo(void * dato)
 	char buff[100];
 	char buffer[100];
 	
+	double tiempoSegundos = 0;
+
 	time_t tiempoClienteSeg;
 	
 	int nb = 0;
@@ -112,26 +117,30 @@ void funcionHilo(void * dato)
 	int idSockCliente = idSocketCliente->idSockCliente;	
 	
 	do
-	{	//Leo desde el cliente
+	{	tiempoSegundos = 0;
+		//Leo desde el cliente
 		nb = read(idSockCliente ,buff,100);
 		buff[nb] = '\0';		
 						
 		time_t tiempoClienteSeg = (time_t) strtod( buff, NULL);
-
-		printf("ID %d  Los datos del buff %s .\n",idSockCliente,buff);		
-		//Calculo diferencia con el tiempo actual 	
-		dameTime(&tiempoServidor);        	
-		snprintf(
-			buffer,100,"%lf",difftime( tiempoServidor.t, tiempoClienteSeg )
-		       	);
-	
-		//Envio differencia en segundos 
-		write( idSockCliente, buffer, sizeof(buffer) );
+	//	printf("TIEMPO DEL CLIENTE ES : --->>>");
+	//	imprimeHora(localtime(&tiempoClienteSeg));
 		
-		//sleep(1);
+		//OBTENGO EL TIEMPO ACTUAL 	
+		dameTime(&tiempoServidor);        	
+		//CALCULO LA DIFERENCIA DE TIEMPO CON EL TIEMPO DEL CLIENTE Y EL SERVIDOR 
+		tiempoSegundos = difftime( tiempoServidor.t , tiempoClienteSeg );
+		//CONVIERTO A STRING LA DIFERENCIA DE TIEMPO
+		snprintf(buffer,100,"%lf",tiempoSegundos );
+		if( tiempoSegundos != 0 )//Indico si no esta sincronizado los tiempos 
+			printf("Sincronizando con el Cliente \033[1m%d\033[0m, difieren en\033[1m %.f\033[0m seg .\n",idSockCliente,tiempoSegundos,buff);
+		//Envio differencia en segundos 
+		write( idSockCliente, buffer, sizeof(buffer) );	
+		sleep(1); //TODO ELIMINAR PARA SINCRONIZAR
 
 	}
 	while(strcmp(buff,"exit"));
+	printf("Sali del Hilo ");
 	close(idSockCliente);
 	pthread_exit(NULL);
 }
