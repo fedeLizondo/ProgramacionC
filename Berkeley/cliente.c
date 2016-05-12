@@ -35,7 +35,7 @@ int main(int argc,char * argv[])
 
 	sd = socket(AF_INET,SOCK_STREAM,0);
 	if( sd < 0 )	
-	{
+	printf(ANSI_BOLD_END);{
 		printf(ANSI_COLOR_RED"ERROR al abrir al socket.\n"ANSI_COLOR_RESET);
 		exit(1);
 	}
