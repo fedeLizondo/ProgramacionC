@@ -10,21 +10,26 @@
 #include <pthread.h>
 
 #include "fecha.h" 
-#include "utils.h"
 
 #define IP "127.0.0.1"//"192.168.1.103"
 #define PUERTO 6666
+
+#define ANSI_COLOR_RED     "\x1b[31m"
+#define ANSI_COLOR_GREEN   "\x1b[32m"
+#define ANSI_COLOR_YELLOW  "\x1b[33m"
+#define ANSI_COLOR_BLUE    "\x1b[34m"
+#define ANSI_COLOR_MAGENTA "\x1b[35m"
+#define ANSI_COLOR_CYAN    "\x1b[36m"
+#define ANSI_COLOR_RESET   "\x1b[0m"
+
 
 struct struct_idSockCliente { int idSockCliente; }; 
 
 void funcionHilo(void *);
 
-int solicitarHora;
-
 int main(int argc,char * argv[])  
 {	
-	solicitarHora = 0;
-
+	
 	struct sockaddr_in servidor_sock,
 			   cliente_sock;
 
@@ -52,9 +57,9 @@ int main(int argc,char * argv[])
 	tiempo_t tiempoServidor;  
 	dameTime( ts  ); 
 	tiempoServidor = *ts;
-	printf(ANSI_BOLD_START"Server ");
+	printf("\033[1mServer ");
     	imprimeHora(tiempoServidor.tMaquina);
-	printf(ANSI_BOLD_END);
+	printf("\033[0m");
 	
 	/////////////////////Start-Server/////////////////////
 
@@ -112,15 +117,7 @@ void funcionHilo(void * dato)
 	int idSockCliente = idSocketCliente->idSockCliente;	
 	
 	do
-	{	
-		
-		if(solicitarHora)
-		{
-			printf("El cliente %d le estoy solicitando la hora",idSockCliente );
-		}
-
-
-		tiempoSegundos = 0;
+	{	tiempoSegundos = 0;
 		//Leo desde el cliente
 		nb = read(idSockCliente ,buff,100);
 		buff[nb] = '\0';		
