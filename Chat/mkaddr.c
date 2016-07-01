@@ -53,13 +53,16 @@
   *  sunsite.unc.edu 
   *  sunsite.unc.edu:* 
   */
-int mkaddr(void *addr, int *addrlen, char *str_addr, char *protocol )
-{
+  int mkaddr(void *addr,
+             int *addrlen,
+             char *str_addr,
+             char *protocol) {
  
   char *inp_addr = strdup(str_addr);
   char *host_part = strtok(inp_addr, ":" );
   char *port_part = strtok(NULL, "\n" );
-  struct sockaddr_in *ap = (struct sockaddr_in *) addr;
+  struct sockaddr_in *ap =
+  (struct sockaddr_in *) addr;
   struct hostent *hp = NULL;
   struct servent *sp = NULL;
   char *cp;
@@ -68,16 +71,13 @@ int mkaddr(void *addr, int *addrlen, char *str_addr, char *protocol )
  /*
   * Set input defaults:
   */
-  if ( !host_part ) 
-  {
+  if ( !host_part ) {
 	host_part =  "*" ;
   }
-  if ( !port_part ) 
-  {
+  if ( !port_part ) {
 	port_part =  "*" ;
   }
-  if ( !protocol ) 
-  {
+  if ( !protocol ) {
 	protocol =  "tcp" ;
   }
  
@@ -92,22 +92,19 @@ int mkaddr(void *addr, int *addrlen, char *str_addr, char *protocol )
  /*
   * Fill in the host address:
   */
-  if ( strcmp(host_part, "*" ) == 0 ) 
-  {
+  if ( strcmp(host_part, "*" ) == 0 ) {
 	; /* Leave as INADDR_ANY */
   }
-  else 
-	if ( isdigit(*host_part) ) 
-	{
-   	/*
+  else if ( isdigit(*host_part) ) {
+   /*
 	* Numeric IP address:
 	*/
 	ap->sin_addr.s_addr =
 	inet_addr(host_part);
 	// if ( ap->sin_addr.s_addr == INADDR_NONE ) {
-		if ( !inet_aton(host_part,&ap->sin_addr) ) {
-           		return -1;
-		}
+	if ( !inet_aton(host_part,&ap->sin_addr) ) {
+           return -1;
+	}
   } 
   else {
  /*
@@ -162,11 +159,4 @@ int mkaddr(void *addr, int *addrlen, char *str_addr, char *protocol )
   free(inp_addr);
   return 0;
   }
-
-
-
-
-
-
-
 

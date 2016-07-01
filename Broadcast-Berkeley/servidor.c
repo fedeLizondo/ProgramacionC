@@ -9,6 +9,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#include <fcntl.h>
+
 #include <pthread.h>
 #include "mkaddr.c"
 #include "lista.h"
@@ -20,22 +22,17 @@
  
 extern int mkaddr( void *addr, int *addrlen, char *str_addr, char *protocol);
  
-#define MAXQ 4
- 
 pthread_mutex_t m1 = PTHREAD_MUTEX_INITIALIZER ;
 pthread_mutex_t m2 = PTHREAD_MUTEX_INITIALIZER ;
 
-int cantidad;
 
 int cantidadMAXClientes;
 int cantidadClientes;
 
-
-
 double tiempoMAXClientes;
+
 double totaldiffTiempo;
 double promedioFinal;
-
 
 double tiempoDeEspera;
 time_t tiempoActual;
@@ -45,9 +42,7 @@ time_t tiempoServidor;
 
 struct struct_idSockCliente{
 	int idSockCliente;
-	};
-
-lista * listaClientes;
+};
 
 /*
  * This function reports the error and
@@ -62,24 +57,35 @@ static void displayError(const char *on_what) {
 }
 
 void funcionUnicast( void *);
-void funcionCreadoraHilos(void *);
+void funtionLanzadorHilos(void *);
 
+/* Datos del servidor TCP/IP GLOBALES PARA SER USADO POR LOS HILOS */
 static char *sv_respuesta_addr = "127.0.0.99:1234";
 struct sockaddr_in adr_respuesta;
 int len_respuesta;
+/*
+lista * lEliminarClientes;
+lista * listaClientes;
+*/
+int IdRespuestaSocket;
+int cantidadAcalcular;
+int cantidadAcalcularPreparados;
+
+struct struct_idSockCliente mistruct;
 
 
 int main(int argc,char **argv) {
 	
-	short x;    /* index of Stock Indexes */
-	double I0;  /* Initial index value */
-	double I;   /* Index value */
+	cantidadAcalcular = 0;
+        cantidadAcalcularPreparados = 0;
+	
 	char bcbuf[512], *bp;/* Buffer and ptr */
 	int z;      /* Status return code */
 	int s;      /* Socket */
 	
-	listaClientes = createList();	
-
+/*	listaClientes     = createList();	
+	lEliminarClientes = createList();
+*/
 	struct sockaddr_in adr_srvr;/* AF_INET */
 	int len_srvr;               /* length */
 	  
@@ -92,29 +98,27 @@ int main(int argc,char **argv) {
 	  	    *bc_addr = "127.255.255.2:9097";//DIRECCION DE BROADCAST
 	
 	
-	static char *sv_respuesta_addr = "127.0.0.99:1234";  		
-	struct sockaddr_in adr_respuesta;
-        int len_respuesta;	
-	
-	struct struct_idSockCliente mistruct;
+	/* Datos de servidor TCP/IP  */
+//	static char *sv_respuesta_addr = "127.0.0.99:1234";//Direccion servidor tcp/ip 		
+//	struct sockaddr_in adr_respuesta;
+//      int len_respuesta;	
+	/*Fin datos servidor*/
 
+	//struct struct_idSockCliente mistruct;
 
-	/*
-	* Form a server address:
-	*/
-	
-	
-	
-	int argumento ;
+	int argumento = 0 ;
+
 	cantidadMAXClientes = 0;
-	tiempoDeEspera = 0;
+	tiempoMAXClientes   = 0;
 	
+	tiempoServidor = time(NULL);
+
 	for( argumento = 1;argumento < argc;argumento++ )
 	{
 
 		if( strcmp( argv[argumento],"-t") == 0 )
 		{
-			tiempoDeEspera = strtod( argv[argumento +1] ,NULL );
+			tiempoMAXClientes = strtod( argv[argumento +1] ,NULL );
 		}
 		if( strcmp( argv[argumento],"-c") == 0 ) 
 		{
@@ -126,19 +130,17 @@ int main(int argc,char **argv) {
 		}
 
 	}
-
-	
-
-
+	/*
 	if ( argc > 2 )
 	{
-		//sv_addr = argv[2];//que cree un puerto por default	
+		//sv_addr = argv[2]; dejo direccion default
+		//asigno por argumento , la direccion del servidor tcp/ip
 		sv_respuesta_addr = argv[2];
 	}
 
-	if ( argc > 1 ) /* Broadcast address: */
+	if ( argc > 1 ) // Broadcast address: 
 		bc_addr = argv[1];
-	
+	*/
 	 /*
 	  * Form the server address:
 	  */
@@ -171,16 +173,14 @@ int main(int argc,char **argv) {
 	 * respuesta del servidor
 	 */
         len_respuesta = sizeof ( adr_respuesta );
-        z = mkaddr ( &adr_respuesta , &len_respuesta ,sv_respuesta_addr,"tcp");	       
+        
+	z = mkaddr ( &adr_respuesta , &len_respuesta ,sv_respuesta_addr,"tcp");	       
 	if( z == -1)
 		displayError("Bad server address");
 
-
-	/*
-	 * Create a UDP socket to use:
-	*/
-	s = socket(AF_INET,SOCK_DGRAM,0);
-	if ( s == -1 )
+	// Create a UDP socket to use:
+	s = socket(AF_INET,SOCK_DGRAM,IPPROTO_UDP);
+	if ( s < 0 )
 		displayError("socket()");
 	 
 	/*
@@ -188,128 +188,70 @@ int main(int argc,char **argv) {
 	 */
 	z = setsockopt(s,
 	               SOL_SOCKET,
+		       //SO_REUSEPORT,
 		       SO_BROADCAST,
 		       &so_broadcast,
 		       sizeof(so_broadcast) );
-	 
+	
+	
 	if ( z == -1 )
 		displayError("setsockopt(SO_BROADCAST)");
 
-	/*
-	 * Bind an address to our socket, so that
-	 * client programs can listen to this
-	 * server:
-	 */
-	z = bind( s,
-		  (struct sockaddr *)&adr_srvr,
-		  len_srvr);
-	 
-	if ( z == -1 )
+	// Bind an address to our socket, so that client programs can listen to this server: /
+	if( bind( s, (struct sockaddr *) &adr_srvr, len_srvr) < 0)
 		displayError("bind()"); 
 	 
+	//INICIALIZO EL SERVIDOR TCP-IP PARA RECIBIR TIEMPOS DE LOS CLIENTES
+	
+	IdRespuestaSocket = socket(AF_INET,SOCK_STREAM,0);
 
-
-	int IdRespuestaSocket = socket(AF_INET,SOCK_STREAM,0);
 	if( bind(IdRespuestaSocket,(struct sockaddr *) &adr_respuesta,len_respuesta) < 0)
 		displayError("ERROR bind() respuesta socket");
-	if( listen(IdRespuestaSocket,5) < 0)
+	
+	if( listen(IdRespuestaSocket,SOMAXCONN ) < 0)
 		displayError("ERROR listen() respuesta socket");
 	
+	// CREO UN HILO PARA RECIBIR LA RESPUESTA DE LOS CLIENTES
+	pthread_t CreadorHilos;
+	pthread_create(&CreadorHilos ,NULL, (void *) funtionLanzadorHilos ,(void *) &mistruct );
 	
-	while(1) {
+	tiempoActual = time(NULL);
+
+	while(1)//LOOP INFINITO
+	{
 		 
-		  bp = bcbuf;
-			
-		  sprintf( bcbuf , "%.f",(double) time(NULL) );
-	 	  printf("Envio este tiempo a los clientes %.f .\n",bcbuf );	
-		  
-		  /*
-		  * Broadcast the updated info:
-		  */
-
-		  z = sendto(s,	 bcbuf,
-				 strlen(bcbuf),
-				 0,
-				(struct sockaddr *)&adr_bc,
-				len_bc ); 
-		  if ( z == -1 )
+	         //CASTEO el tiempo del servidor a un string para enviar a los clientes	
+		 sprintf( bcbuf , "%.f",(double) tiempoServidor);
+		 
+		 /* Broadcast the updated info:  */
+		 z = sendto(s,	 
+			    bcbuf,
+			    strlen(bcbuf),
+			    0,
+			    (struct sockaddr *)&adr_bc,
+			    len_bc );
+		 
+		 printf("Envie %s \n",bcbuf); 
+		 if ( z == -1 ) //OCURRIO UN ERROR CON EL SENDTO
 			  displayError("sendto()");
-
-		  /*cantidadClientes = 0;
-		  if( tiempoDeEspera > 0 )
-		  	tiempoFinal = ( (double) time(NULL) ) +( tiempoDeEspera ) ; 
-		  
-		  printf(" %d %d %d %d \n ",cantidadMAXClientes == 0 ,
-				     cantidadClientes < cantidadMAXClientes ,
-				     tiempoMAXClientes == 0,
-				     difftime (time(NULL) , tiempoFinal ) <= 0  ); 
-		  
-		  tiempoDeEspera = time(NULL) + tiempoMAXClientes;
-			
-		  printf("HOLA MUNDO ESTOY PROBANDO ACA ESTO \n");
-
-		  while( 
-		         ( tiempoMAXClientes == 0 ||  tiempoActual < tiempoDeEspera ) &&
-			 ( cantidadMAXClientes == 0 || cantidadClientes<cantidadMAXClientes )
-		       )
-		  {
-		   
-	           printf("Estoy en  el While\n"); 
-		   tiempoActual = time(NULL);
-		   
-		   mistruct.idSockCliente = accept(
-			           		IdRespuestaSocket,
-	                               		(struct sockaddr *)&adr_respuesta,
-                                         	&len_respuesta
-                                        	);
-
-                  if( mistruct.idSockCliente >= 0 )
-                  {
-                         printf("Conexion aceptada desde el cliente %d\n",
-                         mistruct.idSockCliente);
-                         pthread_t hilo;
-	                        push_back(listaClientes ,&hilo);
-                         cantidadClientes++;
-                         pthread_create( &hilo , NULL, (void *) funcionUnicast, (void *) &mistruct );
-                  }
-              	 
-		   
-/*
-		
-		  } 
-		  			 
-                  
-		  totaldiffTiempo = totaldiffTiempo / cantidadMAXClientes ;
-
-		  while( !isEmpty( listaClientes ) ) 
-		  {
-			  void * respuesta;
-			  pop_back( listaClientes , &respuesta);
-			  pthread_join( *((pthread_t *)respuesta),NULL);
-		  }
-                  /* */		  
-		  sleep(4);
-		  
+		 
+		 sleep(1);//4);
+	
 	  }
-			 
+	  pthread_join( CreadorHilos ,NULL);		 
 	  return 0;
 }
 
 void funcionUnicast(void * dato)
 {
-	printf("ESTOY EN EL HILO\n");
 	struct struct_idSockCliente *idSocketCliente =(struct struct_idSockCliente*) dato;
 	
 	char buff[100];
-	
-	cantidad++;
 	
 	int puedoCambiarVariable = 0;
 
 	double diffTiempoSegundos = 0;
 		
-	time_t tiempoCliente;
-
 	int finBuffer = 0;
 	
 	int idSockCliente = idSocketCliente->idSockCliente;
@@ -317,30 +259,31 @@ void funcionUnicast(void * dato)
 	int cantidad = 100 ;
 
 	do{
-	
 	        bzero(buff,100);
 		finBuffer = read( idSockCliente,buff , 100 ) ;
-		printf("ESTOY EN EL WHILE finBuffer = %d \n y el buffer tiene %s\n ",finBuffer,buff);
+		//printf("ESTOY EN EL WHILE finBuffer = %d \n y el buffer tiene %s\n ",finBuffer,buff);
 		if( strcmp( buff,"sync()") == 0 )
-		{
-		
+		{			
+			printf("DESPUES DEL OK\n");
 			write(idSockCliente ,"ok",100);
+			printf("ANTES DEL READ\n");
+			bzero(buff,100);
 			read(idSockCliente,buff,100);	
-			printf("LEO DEL CLIENTE -> : %s \n",buff);
-			//BLOQUEO LAS VARIABLEAS HASTA QUE TERMINE DE ESCRIBIR
+		        printf("Antes del MUTEX \n");	
+			//BLOQUEO LAS VARIABLEAS HASTA QUE TERMINE DE SUMAR DIFERENCIA DEL CLIENTE
 			pthread_mutex_lock(&m1);
-			
-			diffTiempoSegundos = strtod(buff,NULL);
-			totaldiffTiempo += diffTiempoSegundos ;
-			
+				cantidadAcalcularPreparados++;
+				diffTiempoSegundos = strtod(buff,NULL);
+				totaldiffTiempo += diffTiempoSegundos ;
 			pthread_mutex_unlock(&m1);
+						
+			printf("Despues del MUTEX socketId = %d \n",idSockCliente);	
+			while( !promedioFinal ){} ;	
 			
-			while( promedioFinal == 0){} ;	
-				
-			
-			snprintf(buff,100,"%lf",diffTiempoSegundos);
-			write(idSockCliente,buff,100);		
-			read(idSockCliente ,buff,100);
+			snprintf(buff,100,"%lf",promedioFinal);
+			write(idSockCliente,buff,100);
+			printf("Envio el promedioFinal %.f \n",promedioFinal); 
+			cantidadAcalcular++;		
 		}	 
 	}
 	while( strcmp(buff,"exit") != 0  );
@@ -348,39 +291,69 @@ void funcionUnicast(void * dato)
 	close(idSockCliente);
 	fflush(stdout);
 	cantidad--;
-}
-void funcionCreadoraHilos(void *dato)
-{
-/*	struct struct_idSockCliente mistruct; 
-	int IdRespuestaSocket = -1;
-        printf("Dentro del CREADOR DE HILOS"); 	
-	fflush(stdout);
-        printf("El valor de verdad en el hilo es %d",
-	( (cantidadMAXClientes == 0 ) || cantidadClientes >= cantidadMAXClientes )
-	);
-		while(1){
-		mistruct.idSockCliente = accept(
-                                 	IdRespuestaSocket,
-                                	(struct sockaddr *)&adr_respuesta,
-                                	&len_respuesta
-                                       );
-		
-		  if( mistruct.idSockCliente >= 0 )
-                  {
-                        printf("Conexion aceptada desde el cliente %d\n",
-                        mistruct.idSockCliente);
-                        pthread_t hilo;
-                        push_back(listaClientes ,&hilo);
-                        cantidadClientes++;
-                        pthread_create( &hilo ,
-                                	NULL,
-                               		(void *) funcionUnicast,
-                               		(void *) &mistruct
-          			       );
-	         }
-		}
-*/
+	//pthread_t hAux = pthread_self();
+	//push_back(lEliminarClientes,& hAux );
+	pthread_exit(NULL);
 }
 
+void funtionLanzadorHilos(void * dato )
+{
+	while(1){
+	
+	if( cantidadClientes >= 0 &&  cantidadClientes < cantidadMAXClientes )
+	{
+		mistruct.idSockCliente = accept(
+        	                                IdRespuestaSocket,
+        	                                (struct sockaddr *)&adr_respuesta,
+        	                                 &len_respuesta
+        	                                );
+        	if( mistruct.idSockCliente >= 0 )
+        	{
+        		printf("Conexion aceptada desde el cliente %d\n",mistruct.idSockCliente);
+    		
+			pthread_t hilo;
+        //		push_back(listaClientes ,&hilo);
+			cantidadClientes++;
+        		pthread_create( &hilo,NULL,(void *)funcionUnicast,(void *)&mistruct);
+        	}
+
+	}
+	else
+	{
+		if( cantidadAcalcular >= cantidadMAXClientes )
+		{	
+			printf("%d/%d\n",cantidadClientes,cantidadMAXClientes);
+			printf("TERMINE DE CALCULAR EL PROMEDIO Y ENVIE EL RESULTADO\n");
+			tiempoServidor+=promedioFinal;
+			promedioFinal = 0;
+			totaldiffTiempo = 0;
+			cantidadAcalcular = 0;
+			cantidadAcalcularPreparados = 0;
+		}
+		
+		if( cantidadAcalcularPreparados >= cantidadMAXClientes )
+		{
+			printf("%d/%d\n",cantidadClientes,cantidadMAXClientes);
+			printf("CALCULO PROMEDIO A DEVOLVER\n");
+			promedioFinal = totaldiffTiempo / cantidadClientes;
+			cantidadAcalcularPreparados = 0;
+			cantidadAcalcular = 0;	
+
+		}
+
+	}
+	
+
+/*	while ( !isEmpty(lEliminarClientes))
+	{	
+		void * puntero;
+	 	pop_back(lEliminarClientes,&puntero);
+		pthread_t * hAux = (pthread_t *) puntero;
+		pthread_join(*hAux,NULL);
+	}
+*/
+	}
+	pthread_exit(NULL);
+}
 
 

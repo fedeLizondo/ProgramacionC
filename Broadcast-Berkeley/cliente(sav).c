@@ -39,19 +39,55 @@ displayError(const char *on_what) {
      exit(1);
 }
 
+pthread_mutex_t tokenEscritura = PTHREAD_MUTEX_INITIALIZER ;
+pthread_mutex_t token = PTHREAD_MUTEX_INITIALIZER ;
+
+void foo(void * dato){
+/*	while(1)
+	{
+	if( strcmp(buffer,"\0") !=0 ){
+	//fflush(stdout);
+	//printf("-----> buffer = [ %s ].\n",auxiliar);
+	}
+	} */
+}
+
+void funtionEscritura( void * dato )
+{
+
+	//do
+	//{	
+//		pthread_mutex_lock(&tokenEscritura);
+		fflush(stdin);
+	 	printf("\nPlease enter the message: ");
+	 	bzero(buffer,256);
+	 	bzero(auxiliar,256);
+		fgets(buffer,255,stdin);
+		strcpy(auxiliar,buffer);
+		char * pch = strchr( auxiliar, 10);
+		
+		// Si la encontro, reemplazas nueva linea con nulo, que es el fin
+		// de cadena ('')
+		if (pch != NULL)
+		{
+		   *pch = ' ' ;
+		}
+
+		printf("Ingreso %s. \n" ,buffer);
+//		pthread_mutex_unlock(&tokenEscritura);
+//	}
+//	while(strcmp(buffer,"exit") != 0 );	
+}
 
 int main(int argc,char **argv) {
-     srand(time(NULL));
-
-     int z; //utilizado para retorno de funcion
-     int tamServidor; 
+     int z;
+     int x;
      
      struct sockaddr_in adr;  /* AF_INET */
      int len_inet;            /* length */
      int s;                   /* Socket */
      char dgram[512];         /* Recv buffer */
      
-
      struct sockaddr_in  server_sock;
      int len_server;
      int IdServer;     
@@ -65,9 +101,7 @@ int main(int argc,char **argv) {
      static char
      *bc_addr = "127.255.255.2:9097",
      *server_addr = "127.0.0.99:1234";
-     
-     time_t tiempo = time(NULL)+ (rand()%100) ;	    
-     printf("\n| Tiempo Inicial del Cliente : %.f |\n\n",(double) tiempo);
+     time_t tiempo = time(NULL);	    
      time_t tiempoAnterior = 0; 
 
     /*
@@ -85,8 +119,7 @@ int main(int argc,char **argv) {
     /*
      * Create a UDP socket to use:
      */
-     s = socket( AF_INET,SOCK_DGRAM,IPPROTO_UDP);//0);
-     
+     s = socket(AF_INET,SOCK_DGRAM,0);
      if ( s == -1 )
         displayError("socket()");
 
@@ -109,7 +142,7 @@ int main(int argc,char **argv) {
      */
      z = setsockopt(s,
                     SOL_SOCKET,
-		    SO_REUSEADDR,
+                    SO_REUSEADDR,
                     &so_reuseaddr,
                     sizeof so_reuseaddr);
 
@@ -119,12 +152,16 @@ int main(int argc,char **argv) {
     /*
      * Bind our socket to the broadcast address:
      */
-     z = bind(s ,(struct sockaddr *)&adr ,len_inet);
+     z = bind(s,
+             (struct sockaddr *)&adr,
+             len_inet);
+
      if ( z == -1 )
         displayError("bind(2)");
-     
-     // Configuro la conexion con el servidor TCP/IP
-     
+
+     /*
+      * Configuro la conexion con el servidor TCP/IP
+      */
      IdServer = socket(AF_INET,SOCK_STREAM,0);
      if(IdServer < 0)
 	displayError("Socket() server");
@@ -135,78 +172,85 @@ int main(int argc,char **argv) {
      if( z < 0)
 	  displayError("Bad Server address");
      
+     
      z = connect(IdServer,(struct sockaddr *)&server_sock,len_server);
      if(z < 0)
 	  displayError("Connect() Server ");
      /*
       * Termino configurar la conexion con el servidor TCP 
       */
-     int EXIT = 1; //
-     while ( EXIT ) {
-        
-             	//Espero a que me llegue un mensaje por Broadcast	   
-             
-	     	//Limpio el buffer
-		bzero(dgram,512);
-	     	//Recivo datos del cliente
-		z = recvfrom(s,      		      /*ID del Socket */
-             	             dgram,  	         /* buffer que almacena el mensaje del servidor */
-             	             sizeof dgram,	      /* tamaño del buffer */
-             	             0,      		      /* sin Flags  */
-            	             (struct sockaddr *)&adr, /* direccion del servidor */
-            	             &tamServidor );	      /* tamaño del la direccion del servidor */
-			
-		//printf("Buff ES %s \n ",dgram);
-         	if ( z < 0 )
-	      		displayError("recvfrom(2)"); /*Ocurrio un error*/
-  		   		
-	 	//Casteo el buffer a un struct tipo time_t
-		time_t resultado = (time_t) strtod(dgram,NULL);
 
-		if( resultado != tiempoAnterior)
-		{
+     //Lanzo un hilo para poder escribir
+     pthread_t hiloEscritura,h2;
+    //pthread_create( & hiloEscritura , NULL, (void *) funtionEscritura,(void *) NULL);	
+    // pthread_create( &h2 ,NULL, (void *) foo,NULL);
+     
+     while ( 1 ) {
+        /*
+         * Wait for a broadcast message:
+         */   
+             
+	     //pthread_create(&hiloEscritura, NULL, (void*) funtionEscritura,NULL);  
+	     
+     	
+	     bzero(dgram,512);
+     	     z = recvfrom(s,      /* Socket */
+                      dgram,  /* Receiving buffer */
+                      sizeof dgram,/* Max rcv buf size */
+                      0,      /* Flags: no options */
+                      (struct sockaddr *)&adr, /* Addr */
+                      &x);    /* Addr len, in & out */
+
+         	if ( z < 0 )
+	      	displayError("recvfrom(2)"); /* else err */
+		
+		//printf(" %s \n", dgram);
+
+		
+		printf("Recibi del servidor %s\n",dgram);
+     }
+	 /*	time_t resultado = (time_t) strtod(dgram,NULL);
+	  	if( resultado != tiempoAnterior)
+		{	
 			//Recive la señal de sincronizacion
 			tiempoAnterior = resultado;
-	 		diffServidor = difftime(resultado,tiempo );// + (rand()%100);//Agrega diferencia
-			
-			printf("Envio el nro %.f\n",diffServidor);
-
-			//Inicio el HandShake, enviando sync() al servidor
-			bzero(buff,100);
+		
+	 		diffServidor = difftime(resultado,tiempo );
+			printf("Dentro del if antes del handshake ");	
+			//Inicio el HandShake
 			snprintf(buff,100,"%s","sync()");
 			write(IdServer,buff,100 );
-
 			// LEO LA RESPUESTA DEL CLIENTE ;	
 			bzero(buff,100);
-			printf("ANTES DEL READ\n");
 			read( IdServer, buff, 100);
-			printf("DESPUES DEL READ y leo el hermoso buff %s \n",buff);
 			if ( strcmp(buff,"ok") == 0)
 			{	
-			     //ENVIO AL SERVIDOR LA DIFERENCIA DE TIEMPO CON EL SERVIDOR
-			     bzero(buff,100);
+			     //ENVIO AL CLIENTE LA DIFERENCIA DE TIEMPO CON EL SERVIDOR
 			     snprintf(buff,100,"%f",diffServidor);
-	     		     
-			     write(IdServer,buff,100 );	
-			     printf("ENVIE EL MENSAJE AL SERVIDOR \n");
-			     //LEO LA RESPUESTA DEL SERVIDOR;
+	     		     write(IdServer,buff,100 );	
+			     
 			     bzero(buff,100);
 			     read(IdServer,buff,100);
-
-			     //Casteo la respuesta al string 
-			     diffServidor = (double) strtod(buff,NULL);
 			     
-			     //ACTUALIZO EL TIEMPO DEL SERVIDOR;
-			     tiempo +=diffServidor;	
-			     write(IdServer,"exit",100);
-		     	     printf("------>imprimo la diferencia con el servidor %.f \n",(double)diffServidor);	    
-			}
-		}
-     }
-     //fflush(stdout); 
-     write(IdServer,"exit",100); 
+			     diffServidor = (double) strtod(buff,NULL);
+//			     write(IdServer,"exit",100);
+		     	     printf("imprimo la diferencia con el servidor %.f \n",(double)diffServidor);	    
+			} 
+			*/
+	//	}	 		
+	//	pthread_join(hiloEscritura,NULL);
+	 /*fwrite(dgram,z,1,stdout);
+         putchar('\n');
+/
+ 	fflush(stdout); */
+ //    }
+
+     fflush(stdout); 
+     printf("Sali del WHILE LOCO\n");
+     write(IdServer,"exit",100);
+ 
      close(s);
+     //pthread_join(hiloEscritura,NULL);
+     //pthread_join(h2,NULL);
      return 0;
 }
-
-
